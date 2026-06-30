@@ -1,4 +1,4 @@
-name: Build from ZIP
+name: Build CaptchaPlugin
 
 on:
   push:
@@ -12,10 +12,30 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Extract ZIP
+    - name: Find pom.xml
       run: |
-        find . -name "*.zip" -exec unzip {} -d . \;
-        rm -f *.zip
+        echo "Поиск pom.xml..."
+        find . -name "pom.xml" -type f
+        
+        # Перемещаем файлы из вложенной папки если нужно
+        if [ -d "CaptchaPlugin" ]; then
+          echo "Найдена вложенная папка, перемещаю файлы..."
+          cp -r CaptchaPlugin/* .
+          rm -rf CaptchaPlugin
+        fi
+        
+        # Проверяем что pom.xml на месте
+        if [ ! -f "pom.xml" ]; then
+          # Ищем pom.xml во вложенных папках
+          POM_DIR=$(find . -name "pom.xml" -type f | head -1 | xargs dirname)
+          if [ -n "$POM_DIR" ]; then
+            echo "Перемещаю файлы из $POM_DIR"
+            cp -r $POM_DIR/* .
+            cp -r $POM_DIR/.github . 2>/dev/null || true
+          fi
+        fi
+        
+        ls -la
     
     - name: Setup Java 17
       uses: actions/setup-java@v4
